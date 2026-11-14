@@ -1,11 +1,11 @@
 CC = cc
 CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -Werror -g -Iinclude
-all: deu-shell
+all: jiwonmin-shell
 
-deu-shell: src/main.c src/plan.c src/runner.c src/commands.c include/commands.h include/plan.h include/runner.h
+jiwonmin-shell: src/main.c src/plan.c src/runner.c src/commands.c include/commands.h include/plan.h include/runner.h
 	$(CC) $(CFLAGS) src/main.c src/plan.c src/runner.c src/commands.c -o $@
 
-test: deu-shell tests/test_plan.c src/plan.c include/plan.h
+test: jiwonmin-shell tests/test_plan.c src/plan.c include/plan.h
 	$(CC) $(CFLAGS) tests/test_plan.c src/plan.c -o test-plan
 	./test-plan
 	sh tests/test_runner.sh
@@ -15,5 +15,5 @@ test: deu-shell tests/test_plan.c src/plan.c include/plan.h
 	sh tests/test_regression.sh
 
 clean:
-	rm -f deu-shell test-plan
+	rm -f jiwonmin-shell test-plan
 .PHONY: all test clean

@@ -222,7 +222,7 @@ int runner_execute(const Plan *plan, int *exit_requested) {
                      !strcmp(first->argv[0], "jobs") || !strcmp(first->argv[0], "fg");
     if (plan->count == 1 && is_builtin && !plan->background) {
         if (first->input_path || first->output_path) {
-            fputs("deu-shell: redirection of parent builtins is not supported\n", stderr); return 2;
+            fputs("jiwonmin-shell: redirection of parent builtins is not supported\n", stderr); return 2;
         }
         if (!strcmp(first->argv[0], "jobs")) {
             if (first->argc != 1) { fputs("jobs: no arguments supported\n", stderr); return 2; }
@@ -232,7 +232,7 @@ int runner_execute(const Plan *plan, int *exit_requested) {
         return builtin(first, exit_requested);
     }
     Job *job = allocate_job();
-    if (!job) { fputs("deu-shell: job table full\n", stderr); return 1; }
+    if (!job) { fputs("jiwonmin-shell: job table full\n", stderr); return 1; }
     int previous_read = -1;
     for (size_t i = 0; i < plan->count; ++i) {
         int link[2] = {-1, -1};
@@ -267,7 +267,7 @@ int runner_execute(const Plan *plan, int *exit_requested) {
             code = commands_execute((int)stage->argc, stage->argv);
             if (code >= 0) { fflush(stdout); fflush(stderr); _exit(code); }
             execvp(stage->argv[0], stage->argv);
-            fprintf(stderr, "deu-shell: %s: %s\n", stage->argv[0], strerror(errno));
+            fprintf(stderr, "jiwonmin-shell: %s: %s\n", stage->argv[0], strerror(errno));
             _exit(errno == ENOENT ? 127 : 126);
         }
         if (!job->pgid) job->pgid = pid;

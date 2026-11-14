@@ -9,10 +9,10 @@ int main(void) {
     size_t cap = 0;
     int last_status = 0;
     if (runner_init() != 0) return 1;
-    puts("DEU Shell / stage 6: job control hardening");
+    puts("Jiwonmin Shell / stage 6: job control hardening");
     for (;;) {
         runner_poll();
-        if (isatty(STDIN_FILENO)) { fputs("deu-shell> ", stdout); fflush(stdout); }
+        if (isatty(STDIN_FILENO)) { fputs("jiwonmin-shell> ", stdout); fflush(stdout); }
         if (getline(&line, &cap, stdin) < 0) break;
         Plan plan;
         char error[128];
