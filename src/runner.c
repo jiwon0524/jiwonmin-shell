@@ -112,8 +112,18 @@ int runner_init(void) {
     return 0;
 }
 void runner_shutdown(void) {
-    /* Do not kill jobs implicitly: a future stage can implement explicit cleanup. */
-    if (interactive) (void)tcsetpgrp(STDIN_FILENO, shell_pgid);
+    /* Notify remaining jobs that the shell is exiting. */
+    runner_poll();
+    for (size_t i = 0; i < MAX_JOBS; ++i) {
+        if (!jobs[i].used || jobs[i].pgid <= 0) continue;
+        if (kill(-jobs[i].pgid, SIGHUP) < 0 && errno != ESRCH)
+            perror("SIGHUP");
+        if (all_stopped(&jobs[i]) &&
+            kill(-jobs[i].pgid, SIGCONT) < 0 && errno != ESRCH)
+            perror("SIGCONT");
+    }
+    if (interactive && tcsetpgrp(STDIN_FILENO, shell_pgid) < 0)
+        perror("tcsetpgrp: restore shell");
 }
 static int redirect_fd(const char *path, int target, int flags, mode_t mode) {
     int fd = open(path, flags, mode);
@@ -190,9 +200,18 @@ static int foreground_job(const Stage *stage) {
             if (jobs[i].used && (!job || jobs[i].id > job->id)) job = &jobs[i];
     }
     if (!job) { fputs("fg: no such job\n", stderr); return 1; }
-    if (interactive && tcsetpgrp(STDIN_FILENO, job->pgid) < 0) perror("tcsetpgrp");
-    if (kill(-job->pgid, SIGCONT) < 0) perror("SIGCONT");
-    for (size_t i = 0; i < job->count; ++i) if (job->state[i] == 1) job->state[i] = 0;
+    if (interactive && tcsetpgrp(STDIN_FILENO, job->pgid) < 0) {
+        perror("tcsetpgrp");
+        return 1;
+    }
+    if (kill(-job->pgid, SIGCONT) < 0) {
+        perror("SIGCONT");
+        if (interactive && tcsetpgrp(STDIN_FILENO, shell_pgid) < 0)
+            perror("tcsetpgrp: restore shell");
+        return 1;
+    }
+    for (size_t i = 0; i < job->count; ++i)
+        if (job->state[i] == 1) job->state[i] = 0;
     return wait_foreground(job);
 }
 int runner_execute(const Plan *plan, int *exit_requested) {
@@ -229,7 +248,10 @@ int runner_execute(const Plan *plan, int *exit_requested) {
         }
         if (pid == 0) {
             pid_t group = job->pgid ? job->pgid : getpid();
-            (void)setpgid(0, group);
+            if (setpgid(0, group) < 0) {
+                perror("setpgid: child");
+                _exit(1);
+            }
             default_signal(SIGINT); default_signal(SIGQUIT); default_signal(SIGTSTP);
             default_signal(SIGTTIN); default_signal(SIGTTOU);
             if (previous_read >= 0 && dup2(previous_read, STDIN_FILENO) < 0) { perror("dup2"); _exit(1); }
@@ -249,7 +271,14 @@ int runner_execute(const Plan *plan, int *exit_requested) {
             _exit(errno == ENOENT ? 127 : 126);
         }
         if (!job->pgid) job->pgid = pid;
-        (void)setpgid(pid, job->pgid);
+        /* Both parent and child attempt setpgid to close the fork race.
+           EACCES means the child has already executed its program. */
+        if (setpgid(pid, job->pgid) < 0 &&
+            errno != EACCES && errno != ESRCH) {
+            perror("setpgid: parent");
+            job->pids[job->count++] = pid;
+            goto launch_error;
+        }
         job->pids[job->count++] = pid;
         job->last_pid = pid;
         if (previous_read >= 0) close(previous_read);
@@ -261,11 +290,16 @@ int runner_execute(const Plan *plan, int *exit_requested) {
         printf("[%d] %ld\n", job->id, (long)job->pgid);
         return 0;
     }
-    if (interactive && tcsetpgrp(STDIN_FILENO, job->pgid) < 0) perror("tcsetpgrp");
+    if (interactive && tcsetpgrp(STDIN_FILENO, job->pgid) < 0) {
+        perror("tcsetpgrp");
+        goto launch_error;
+    }
     return wait_foreground(job);
 launch_error:
     if (previous_read >= 0) close(previous_read);
     if (job->pgid > 0) (void)kill(-job->pgid, SIGTERM);
+    if (interactive && tcsetpgrp(STDIN_FILENO, shell_pgid) < 0)
+        perror("tcsetpgrp: restore shell");
     for (size_t i = 0; i < job->count; ++i) {
         int status;
         while (waitpid(job->pids[i], &status, 0) < 0 && errno == EINTR) {}

@@ -12,6 +12,7 @@ test: deu-shell tests/test_plan.c src/plan.c include/plan.h
 	sh tests/test_pipeline.sh
 	sh tests/test_jobs.sh
 	sh tests/test_commands.sh
+	sh tests/test_regression.sh
 
 clean:
 	rm -f deu-shell test-plan

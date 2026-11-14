@@ -1,4 +1,4 @@
-# DEU Shell — Stage 5
+# DEU Shell — Stage 6
 
 Educational C11 shell implementing eleven assignment commands: `ls`, `pwd`, `cd`, `mkdir`, `rmdir`, `ln`, `cp`, `rm`, `mv`, `cat`, and `grep`.
 
@@ -21,7 +21,7 @@ make clean && make && make test
 - `cat [file ...]` and `grep pattern [file ...]`: basic text operations; `grep` matches literal substrings, not regular expressions.
 - `jobs`, `fg`, `exit`, background `&`, redirections `<`, `>`, `>>`, and pipelines `|` remain available.
 
-This is not a full replacement for GNU coreutils or POSIX shell utilities. In particular, command flags and recursive operations are not implemented. Job control is basic and needs interactive terminal regression testing.
+This is not a full replacement for GNU coreutils or POSIX shell utilities. In particular, command flags and recursive operations are not implemented. Job control is basic. Manual interactive-terminal regression tests for Ctrl+C, Ctrl+Z, Ctrl+\\, jobs and fg are still required. Shell exit sends SIGHUP to tracked jobs and SIGCONT to stopped jobs.
 
 ## Team work
 

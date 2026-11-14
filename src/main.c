@@ -9,7 +9,7 @@ int main(void) {
     size_t cap = 0;
     int last_status = 0;
     if (runner_init() != 0) return 1;
-    puts("DEU Shell / stage 5: internal file commands and job control");
+    puts("DEU Shell / stage 6: job control hardening");
     for (;;) {
         runner_poll();
         if (isatty(STDIN_FILENO)) { fputs("deu-shell> ", stdout); fflush(stdout); }

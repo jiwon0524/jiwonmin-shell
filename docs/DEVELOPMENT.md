@@ -14,3 +14,13 @@ Added process groups, terminal foreground handoff, stopped/running/finished job 
 
 ## Stage 5
 Implemented the ten non-cd assignment commands in `src/commands.c`, using POSIX file/directory operations; retained parent-process `cd` in runner. Added end-to-end tests for file manipulation, piping, grep, and self-copy protection. Supported syntax is deliberately narrower than GNU utilities.
+
+
+## Stage 6 — job-control hardening
+- Check process-group assignment failures in both parent and child.
+- Restore terminal ownership when foreground handoff fails.
+- Handle `fg` resume errors instead of silently continuing.
+- On shell exit, notify tracked background/stopped jobs with SIGHUP (and SIGCONT for stopped jobs).
+- Add regression tests for multi-stage pipes, redirection failure recovery, and invalid `fg` identifiers.
+
+Limitations: interactive terminal signal handling still needs PTY-based tests; no claim of full POSIX job control compliance.
