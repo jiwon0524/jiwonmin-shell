@@ -6,7 +6,12 @@
 #define PLAN_MAX_TOKENS 256
 #define PLAN_TEXT_CAP 4096
 
+#define PLAN_MAX_REDIRS 16
+typedef enum { REDIR_INPUT, REDIR_OUTPUT, REDIR_APPEND, REDIR_DUP_STDERR } RedirType;
+typedef struct { RedirType type; int fd; char *path; } Redirection;
 typedef struct {
+    Redirection redirs[PLAN_MAX_REDIRS];
+    size_t redir_count;
     char *argv[PLAN_MAX_ARGS + 1];
     size_t argc;
     char *input_path;

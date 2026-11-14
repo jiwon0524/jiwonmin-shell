@@ -133,10 +133,16 @@ static int redirect_fd(const char *path, int target, int flags, mode_t mode) {
     return 0;
 }
 static int apply_redirections(const Stage *stage) {
-    if (stage->input_path && redirect_fd(stage->input_path, STDIN_FILENO, O_RDONLY, 0) < 0) return -1;
-    if (stage->output_path) {
-        int flags = O_WRONLY | O_CREAT | (stage->append_output ? O_APPEND : O_TRUNC);
-        if (redirect_fd(stage->output_path, STDOUT_FILENO, flags, 0666) < 0) return -1;
+    /* Apply in lexical order: >file 2>&1 differs from 2>&1 >file. */
+    for (size_t i = 0; i < stage->redir_count; ++i) {
+        const Redirection *r = &stage->redirs[i];
+        if (r->type == REDIR_DUP_STDERR) {
+            if (dup2(STDOUT_FILENO, STDERR_FILENO) < 0) { perror("dup2"); return -1; }
+            continue;
+        }
+        int flags = r->type == REDIR_INPUT ? O_RDONLY :
+            O_WRONLY | O_CREAT | (r->type == REDIR_APPEND ? O_APPEND : O_TRUNC);
+        if (redirect_fd(r->path, r->fd, flags, 0666) < 0) return -1;
     }
     return 0;
 }
@@ -265,7 +271,7 @@ int runner_execute(const Plan *plan, int *exit_requested) {
                      !strcmp(first->argv[0], "jobs") || !strcmp(first->argv[0], "fg") ||
                      !strcmp(first->argv[0], "export") || !strcmp(first->argv[0], "unset");
     if (plan->count == 1 && is_builtin && !plan->background) {
-        if (first->input_path || first->output_path) {
+        if (first->redir_count) {
             fputs("jiwonmin-shell: redirection of parent builtins is not supported\n", stderr); return 2;
         }
         if (!strcmp(first->argv[0], "jobs")) {

@@ -24,7 +24,10 @@ test: jiwonmin-shell tests/test_plan.c src/plan.c include/plan.h
 	./test-chain
 	sh tests/test_chain_integration.sh
 	sh tests/test_environment.sh
+	$(CC) $(CFLAGS) tests/test_redirection.c src/plan.c -o test-redirection
+	./test-redirection
+	sh tests/test_redirection.sh
 
 clean:
-	rm -f jiwonmin-shell test-plan test-completion test-command-check test-chain
+	rm -f jiwonmin-shell test-plan test-completion test-command-check test-chain test-redirection
 .PHONY: all test clean

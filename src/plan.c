@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef enum { WORD, PIPE, INPUT, OUTPUT, APPEND, BACKGROUND } TokenType;
+typedef enum { WORD, PIPE, INPUT, OUTPUT, APPEND, ERR_OUTPUT, ERR_APPEND, DUP_STDERR, BACKGROUND } TokenType;
 typedef struct { TokenType type; char *text; } Token;
 static void fail(char *err, size_t cap, const char *message) {
     if (cap) snprintf(err, cap, "%s", message);
@@ -69,6 +69,16 @@ static int tokenize(const char *line, Token *tokens, size_t *n, char *err, size_
     while (pos < len) {
         if (isspace((unsigned char)line[pos])) { ++pos; continue; }
         char ch = line[pos];
+        if (ch == '2' && pos + 1 < len && line[pos + 1] == '>') {
+            TokenType type = ERR_OUTPUT;
+            pos += 2;
+            if (pos < len && line[pos] == '>') { type = ERR_APPEND; ++pos; }
+            else if (pos + 1 < len && line[pos] == '&' && line[pos + 1] == '1') {
+                type = DUP_STDERR; pos += 2;
+            }
+            if (push_token(tokens, n, type, NULL, 0, err, cap)) return -1;
+            continue;
+        }
         if (ch == '|' || ch == '<' || ch == '>' || ch == '&') {
             TokenType type = ch == '|' ? PIPE : ch == '<' ? INPUT : ch == '&' ? BACKGROUND : OUTPUT;
             if (ch == '>' && pos + 1 < len && line[pos + 1] == '>') { type = APPEND; ++pos; }
@@ -106,6 +116,7 @@ void plan_release(Plan *plan) {
         Stage *st = &plan->stages[s];
         for (size_t a = 0; a < st->argc; ++a) free(st->argv[a]);
         free(st->input_path); free(st->output_path);
+        for (size_t r = 0; r < st->redir_count; ++r) free(st->redirs[r].path);
     }
     memset(plan, 0, sizeof(*plan));
 }
@@ -131,12 +142,30 @@ int plan_parse_status(const char *line, Plan *out, char *err, size_t cap, int la
             if (i != n - 1) { fail(err, cap, "& must be last"); goto invalid; }
             out->background = 1;
         } else {
+            if (st->redir_count >= PLAN_MAX_REDIRS) { fail(err, cap, "too many redirections"); goto invalid; }
+            if (tk.type == DUP_STDERR) {
+                st->redirs[st->redir_count++] = (Redirection){REDIR_DUP_STDERR, 2, NULL};
+                continue;
+            }
             if (i + 1 >= n || tokens[i + 1].type != WORD) { fail(err, cap, "redirection requires filename"); goto invalid; }
-            char **target = tk.type == INPUT ? &st->input_path : &st->output_path;
-            if (*target) { fail(err, cap, "duplicate redirection"); goto invalid; }
-            *target = strdup(tokens[++i].text);
-            if (!*target) { fail(err, cap, "out of memory"); goto invalid; }
-            if (tk.type != INPUT) st->append_output = tk.type == APPEND;
+            int fd = tk.type == INPUT ? 0 : (tk.type == ERR_OUTPUT || tk.type == ERR_APPEND ? 2 : 1);
+            for (size_t r = 0; r < st->redir_count; ++r)
+                if (st->redirs[r].fd == fd && st->redirs[r].type != REDIR_DUP_STDERR) {
+                    fail(err, cap, "duplicate redirection"); goto invalid;
+                }
+            const char *path = tokens[++i].text;
+            RedirType kind = tk.type == INPUT ? REDIR_INPUT :
+                (tk.type == APPEND || tk.type == ERR_APPEND ? REDIR_APPEND : REDIR_OUTPUT);
+            char *copy = strdup(path);
+            if (!copy) { fail(err, cap, "out of memory"); goto invalid; }
+            st->redirs[st->redir_count++] = (Redirection){kind, fd, copy};
+            /* Retain legacy fields for older parser tests and callers. */
+            char **target = fd == 0 ? &st->input_path : (fd == 1 ? &st->output_path : NULL);
+            if (target) {
+                *target = strdup(path);
+                if (!*target) { fail(err, cap, "out of memory"); goto invalid; }
+                if (fd == 1) st->append_output = kind == REDIR_APPEND;
+            }
         }
     }
     for (size_t i = 0; i < out->count; ++i) {

@@ -11,3 +11,4 @@ test-plan
 test-completion
 test-command-check
 test-chain
+test-redirection
