@@ -1,19 +1,31 @@
-# DEU Shell — Stage 3
+# DEU Shell — Stage 4
 
-C11 educational shell. Supports single commands, `cd`, `exit`, input/output redirection (`<`, `>`, `>>`), and multi-stage pipelines (`|`). Background jobs (`&`) and interactive job control are not yet implemented. The assigned 11 commands currently run as external executables; they are **not** implemented internally.
+Educational C11 shell. Supports external foreground commands, `cd`, `exit`, `<`, `>`, `>>`, multi-stage pipelines, background jobs (`&`), and basic `jobs` / `fg` job control. In an interactive terminal, foreground process groups receive Ctrl+C (SIGINT), Ctrl+Z (SIGTSTP), and Ctrl+\ (SIGQUIT). The shell itself ignores those signals.
 
-## Build and test
+## Build
 
 ```sh
 make clean && make && make test
 ./deu-shell
 ```
 
-Run commands inside the shell **without** typing the `deu-shell>` prompt.
+## Manual interactive checks
 
-## Limitations
+Run one line at a time *inside* the shell:
 
-- Builtin `cd` and `exit` with redirection are rejected in stage 3.
-- `cd` inside a pipeline changes only the child process's directory.
-- The parser is an educational subset of POSIX shell grammar.
-- Signal/job control and command-specific builtins are future stages.
+```text
+sleep 10 &
+jobs
+fg
+```
+
+While `fg` is waiting, press Ctrl+C or Ctrl+Z. After Ctrl+Z, run `jobs` and `fg` to resume. `Ctrl+Z` is SIGTSTP, **not** SIGQUIT.
+
+## Current limitations
+
+- Parent builtins do not support redirection; `jobs` and `fg` are unavailable in pipelines.
+- Background status is reaped when the shell next processes input, rather than asynchronously notifying while waiting at the prompt.
+- Job IDs can be reused only via new allocations, not by a persistent jobspec grammar; `fg [numeric-id]` is supported.
+- No terminal mode preservation per stopped job; interactive full-screen programs may require additional work.
+- `exit` does not terminate outstanding background jobs.
+- The assignment's 11 commands still run via `execvp` and have **not** been independently implemented.

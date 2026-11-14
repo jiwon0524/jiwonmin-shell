@@ -10,6 +10,7 @@ test: deu-shell tests/test_plan.c src/plan.c include/plan.h
 	./test-plan
 	sh tests/test_runner.sh
 	sh tests/test_pipeline.sh
+	sh tests/test_jobs.sh
 
 clean:
 	rm -f deu-shell test-plan

@@ -15,5 +15,5 @@ grep -qx hello "$tmp/piped"
 printf 'cat < %s\nexit\n' "$tmp/missing" | ./deu-shell >"$tmp/missing_out" 2>"$tmp/missing_err"
 grep -q "$tmp/missing" "$tmp/missing_err"
 printf 'echo nope &\nexit\n' | ./deu-shell >"$tmp/bg_out" 2>"$tmp/bg_err"
-grep -q 'not supported' "$tmp/bg_err"
+grep -q '^\[.*\]' "$tmp/bg_out"
 printf '5 stage-3 checks passed\n'

@@ -4,14 +4,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-
 int main(void) {
     char *line = NULL;
     size_t cap = 0;
     int last_status = 0;
-    puts("DEU Shell / stage 3: pipelines and redirection (no background yet)");
+    if (runner_init() != 0) return 1;
+    puts("DEU Shell / stage 4: background and basic job control");
     for (;;) {
-        if (isatty(fileno(stdin))) { fputs("deu-shell> ", stdout); fflush(stdout); }
+        runner_poll();
+        if (isatty(STDIN_FILENO)) { fputs("deu-shell> ", stdout); fflush(stdout); }
         if (getline(&line, &cap, stdin) < 0) break;
         Plan plan;
         char error[128];
@@ -26,5 +27,6 @@ int main(void) {
         if (exit_requested) break;
     }
     free(line);
+    runner_shutdown();
     return last_status;
 }

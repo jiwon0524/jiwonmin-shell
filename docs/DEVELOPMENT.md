@@ -8,3 +8,6 @@
 
 ## Stage 3
 Added pipe-connected child processes and per-stage input/output redirection; tested with shell integration tests. Background and signal/job control remain unimplemented.
+
+## Stage 4
+Added process groups, terminal foreground handoff, stopped/running/finished job tracking, background execution, jobs/fg, and signal defaults for child processes. Tested in noninteractive automation; Ctrl+C/Ctrl+Z must be checked manually in an interactive terminal.
