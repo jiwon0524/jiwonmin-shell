@@ -9,3 +9,4 @@ test-plan
 
 # 테스트 실행 파일
 test-completion
+test-command-check
