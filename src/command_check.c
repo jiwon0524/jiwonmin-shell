@@ -10,7 +10,7 @@
 #include <unistd.h>
 
 static const char *const builtin[] = {
-    "cd", "exit", "help", "history", "jobs", "fg", "jiwonmin",
+    "cd", "exit", "help", "history", "jobs", "fg", "jiwonmin", "export", "unset", "env",
     "ls", "pwd", "mkdir", "rmdir", "ln", "cp", "rm", "mv", "cat", "grep", NULL
 };
 int command_word(const char *line, size_t *begin, size_t *end) {

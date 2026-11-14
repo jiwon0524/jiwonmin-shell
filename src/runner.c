@@ -151,6 +151,46 @@ static int builtin(const Stage *stage, int *exit_requested) {
         const char *target = stage->argc == 2 ? stage->argv[1] : getenv("HOME");
         if (!target) { fputs("cd: HOME is not set\n", stderr); return 1; }
         if (chdir(target) < 0) { perror("cd"); return 1; }
+        char *cwd = getcwd(NULL, 0);
+        if (!cwd) { perror("getcwd"); return 1; }
+        int ok = setenv("PWD", cwd, 1);
+        free(cwd);
+        if (ok < 0) { perror("setenv PWD"); return 1; }
+        return 0;
+    }
+    if (!strcmp(cmd, "export")) {
+        if (stage->argc < 2) { fputs("사용법: export NAME=VALUE [...]\n", stderr); return 2; }
+        for (size_t i = 1; i < stage->argc; ++i) {
+            const char *arg = stage->argv[i];
+            const char *eq = strchr(arg, '=');
+            size_t n = eq ? (size_t)(eq - arg) : 0;
+            if (!n || !( (arg[0] >= 'A' && arg[0] <= 'Z') ||
+                          (arg[0] >= 'a' && arg[0] <= 'z') || arg[0] == '_')) {
+                fputs("export: NAME=VALUE 형식이 필요합니다.\n", stderr); return 2;
+            }
+            for (size_t j=1;j<n;++j)
+                if (!((arg[j]>='A' && arg[j]<='Z') || (arg[j]>='a' && arg[j]<='z') ||
+                      (arg[j]>='0' && arg[j]<='9') || arg[j]=='_')) {
+                    fputs("export: 잘못된 변수 이름\n", stderr); return 2;
+                }
+            char *name = strndup(arg, n);
+            if (!name) { perror("export"); return 1; }
+            int rc = setenv(name, eq + 1, 1);
+            free(name);
+            if (rc) { perror("export"); return 1; }
+        }
+        return 0;
+    }
+    if (!strcmp(cmd, "unset")) {
+        if (stage->argc < 2) { fputs("사용법: unset NAME [...]\n", stderr); return 2; }
+        for (size_t i=1;i<stage->argc;++i)
+            if (unsetenv(stage->argv[i]) < 0) { perror("unset"); return 1; }
+        return 0;
+    }
+    if (!strcmp(cmd, "env")) {
+        if (stage->argc != 1) { fputs("사용법: env\n", stderr); return 2; }
+        extern char **environ;
+        for (char **p = environ; *p; ++p) puts(*p);
         return 0;
     }
     return -1;
@@ -222,7 +262,8 @@ int runner_execute(const Plan *plan, int *exit_requested) {
     if (!plan->count) return 0;
     const Stage *first = &plan->stages[0];
     int is_builtin = !strcmp(first->argv[0], "cd") || !strcmp(first->argv[0], "exit") ||
-                     !strcmp(first->argv[0], "jobs") || !strcmp(first->argv[0], "fg");
+                     !strcmp(first->argv[0], "jobs") || !strcmp(first->argv[0], "fg") ||
+                     !strcmp(first->argv[0], "export") || !strcmp(first->argv[0], "unset");
     if (plan->count == 1 && is_builtin && !plan->background) {
         if (first->input_path || first->output_path) {
             fputs("jiwonmin-shell: redirection of parent builtins is not supported\n", stderr); return 2;

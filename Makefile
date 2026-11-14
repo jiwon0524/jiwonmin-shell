@@ -23,6 +23,7 @@ test: jiwonmin-shell tests/test_plan.c src/plan.c include/plan.h
 	$(CC) $(CFLAGS) tests/test_chain.c src/chain.c -o test-chain
 	./test-chain
 	sh tests/test_chain_integration.sh
+	sh tests/test_environment.sh
 
 clean:
 	rm -f jiwonmin-shell test-plan test-completion test-command-check test-chain

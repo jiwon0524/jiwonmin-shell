@@ -19,6 +19,7 @@ typedef struct {
     int background;
 } Plan;
 int plan_parse(const char *line, Plan *out, char *error, size_t error_size);
+int plan_parse_status(const char *line, Plan *out, char *error, size_t error_size, int last_status);
 void plan_release(Plan *plan);
 void plan_print(const Plan *plan);
 #endif

@@ -25,7 +25,45 @@ static int push_token(Token *items, size_t *count, TokenType type, const char *d
     items[(*count)++] = (Token){type, copy};
     return 0;
 }
-static int tokenize(const char *line, Token *tokens, size_t *n, char *err, size_t cap) {
+static int add_text(char *buf, size_t *used, const char *text, char *err, size_t cap) {
+    size_t n = strlen(text);
+    if (n >= PLAN_TEXT_CAP - *used) { fail(err, cap, "expanded input too long"); return -1; }
+    memcpy(buf + *used, text, n); *used += n;
+    return 0;
+}
+static int add_variable(const char *line, size_t *pos, char *buf, size_t *used,
+                        int last_status, char *err, size_t cap) {
+    size_t i = *pos + 1, begin = i;
+    if (line[i] == '?') {
+        char status[32]; snprintf(status, sizeof(status), "%d", last_status);
+        *pos = i + 1;
+        return add_text(buf, used, status, err, cap);
+    }
+    if (line[i] == '{') {
+        begin = ++i;
+        if (!(isalpha((unsigned char)line[i]) || line[i] == '_')) {
+            fail(err, cap, "invalid variable name"); return -1;
+        }
+        while (isalnum((unsigned char)line[i]) || line[i] == '_') ++i;
+        if (line[i] != '}') { fail(err, cap, "missing } in variable"); return -1; }
+        *pos = i + 1;
+    } else {
+        if (!(isalpha((unsigned char)line[i]) || line[i] == '_')) {
+            buf[(*used)++] = '$'; ++*pos; return 0;
+        }
+        while (isalnum((unsigned char)line[i]) || line[i] == '_') ++i;
+        *pos = i;
+    }
+    size_t n = i - begin;
+    char *name = malloc(n + 1);
+    if (!name) { fail(err, cap, "out of memory"); return -1; }
+    memcpy(name, line + begin, n); name[n] = 0;
+    const char *value = getenv(name);
+    int result = add_text(buf, used, value ? value : "", err, cap);
+    free(name);
+    return result;
+}
+static int tokenize(const char *line, Token *tokens, size_t *n, char *err, size_t cap, int last_status) {
     size_t pos = 0, len = strlen(line);
     if (len >= PLAN_TEXT_CAP) { fail(err, cap, "input too long"); return -1; }
     while (pos < len) {
@@ -43,6 +81,10 @@ static int tokenize(const char *line, Token *tokens, size_t *n, char *err, size_
             ch = line[pos];
             if (!quote && (isspace((unsigned char)ch) || ch == '|' || ch == '<' || ch == '>' || ch == '&')) break;
             started = 1;
+            if (ch == '$' && quote != '\'') {
+                if (add_variable(line, &pos, buffer, &used, last_status, err, cap)) return -1;
+                continue;
+            }
             if (ch == '\\') {
                 if (++pos == len) { fail(err, cap, "unfinished escape"); return -1; }
                 buffer[used++] = line[pos++]; continue;
@@ -51,6 +93,7 @@ static int tokenize(const char *line, Token *tokens, size_t *n, char *err, size_
                 if (!quote) { quote = ch; ++pos; continue; }
                 if (quote == ch) { quote = 0; ++pos; continue; }
             }
+            if (used + 1 >= sizeof(buffer)) { fail(err, cap, "input too long"); return -1; }
             buffer[used++] = ch; ++pos;
         }
         if (quote) { fail(err, cap, "unclosed quote"); return -1; }
@@ -66,11 +109,11 @@ void plan_release(Plan *plan) {
     }
     memset(plan, 0, sizeof(*plan));
 }
-int plan_parse(const char *line, Plan *out, char *err, size_t cap) {
+int plan_parse_status(const char *line, Plan *out, char *err, size_t cap, int last_status) {
     Token tokens[PLAN_MAX_TOKENS] = {0}; size_t n = 0;
     memset(out, 0, sizeof(*out));
     if (cap) err[0] = '\0';
-    if (tokenize(line, tokens, &n, err, cap)) goto invalid;
+    if (tokenize(line, tokens, &n, err, cap, last_status)) goto invalid;
     if (!n) { clear_tokens(tokens, n); return 0; }
     out->count = 1;
     for (size_t i = 0; i < n; ++i) {
@@ -112,4 +155,8 @@ void plan_print(const Plan *plan) {
         printf("\n  stdin=%s stdout=%s mode=%s\n", st->input_path ? st->input_path : "(inherit)",
                st->output_path ? st->output_path : "(inherit)", st->append_output ? "append" : "truncate");
     }
+}
+
+int plan_parse(const char *line, Plan *out, char *err, size_t cap) {
+    return plan_parse_status(line, out, err, cap, 0);
 }

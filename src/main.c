@@ -91,11 +91,11 @@ static char *expand_history(const char *input) {
     return strdup(found);
 }
 
-static int execute_single(const char *command, int *exit_requested) {
+static int execute_single(const char *command, int *exit_requested, int prior_status) {
     Plan plan;
     char error[128];
     int last_status=0;
-    if (plan_parse(command,&plan,error,sizeof(error))!=0) {
+    if (plan_parse_status(command,&plan,error,sizeof(error),prior_status)!=0) {
         fprintf(stderr,"문법 오류: %s\n",error);
         return 2;
     }
@@ -137,7 +137,7 @@ int main(void) {
     size_t cap = 0;
     int last_status = 0;
     if (runner_init() != 0) return 1;
-    puts("Jiwonmin Shell 14단계 | && / || / ; / Tab / history");
+    puts("Jiwonmin Shell 15단계 | 환경변수 / && / || / Tab / history");
     for (;;) {
         runner_poll();
         if (isatty(STDIN_FILENO) && isatty(STDOUT_FILENO)) {
@@ -167,7 +167,7 @@ int main(void) {
             ChainItem *item=&chain.items[i];
             if (item->before==CHAIN_AND && last_status!=0) continue;
             if (item->before==CHAIN_OR && last_status==0) continue;
-            last_status=execute_single(item->text,&exit_requested);
+            last_status=execute_single(item->text,&exit_requested,last_status);
             if (exit_requested) break;
         }
         chain_free(&chain);

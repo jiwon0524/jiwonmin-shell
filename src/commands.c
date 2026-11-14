@@ -29,6 +29,11 @@ static int command_help(int argc, char *const *argv) {
     puts("!! / !번호        : 이전 명령어 재실행");
     puts("jobs               : 작업 목록 확인");
     puts("fg [작업번호]      : 작업을 포그라운드로 전환");
+    puts("export NAME=VALUE  : 환경변수 설정");
+    puts("unset NAME         : 환경변수 삭제");
+    puts("env                : 환경변수 목록 출력");
+    puts("$NAME / ${NAME}    : 환경변수 값 치환 (작은따옴표 제외)");
+    puts("$?                 : 직전 명령어 종료 상태");
     puts("exit               : 쉘 종료");
     puts("help               : 이 도움말 출력");
     puts("[화면 캡처 - X11]");
