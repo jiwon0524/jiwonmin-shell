@@ -1,4 +1,4 @@
-# DEU Shell — Stage 5
+# jiwonmin Shell — Stage 5
 
 Educational C11 shell implementing eleven assignment commands: `ls`, `pwd`, `cd`, `mkdir`, `rmdir`, `ln`, `cp`, `rm`, `mv`, `cat`, and `grep`.
 
