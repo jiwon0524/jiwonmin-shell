@@ -23,8 +23,14 @@ int main(void) {
     assert(s && !strcmp(s,"cat report.txt") && matches==1);free(s);
     s=completion_expand("cat missing",11,&pos,&matches);
     assert(!s && matches==0);
+    /* PATH differs by machine; isolate the builtin completion assertion. */
+    const char *env_path=getenv("PATH");
+    char *saved_path=env_path?strdup(env_path):NULL;
+    assert(setenv("PATH",tmp,1)==0);
     s=completion_expand("mkd",3,&pos,&matches);
     assert(s && !strcmp(s,"mkdir") && matches==1);free(s);
+    if(saved_path) { assert(setenv("PATH",saved_path,1)==0); free(saved_path); }
+    else assert(unsetenv("PATH")==0);
     size_t n=0;
     char **names=completion_candidates("cd Do",5,&n);
     assert(names && n==2 && !strcmp(names[0],"Documents/") && !strcmp(names[1],"Downloads/"));
