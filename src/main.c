@@ -2,6 +2,7 @@
 #include "plan.h"
 #include "runner.h"
 #include "line_editor.h"
+#include "command_check.h"
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
@@ -94,7 +95,7 @@ int main(void) {
     size_t cap = 0;
     int last_status = 0;
     if (runner_init() != 0) return 1;
-    puts("Jiwonmin Shell 10단계 | help / history | 방향키로 기록 탐색");
+    puts("Jiwonmin Shell 13단계 | 명령어 색상 / 오타 추천 / Tab / history");
     for (;;) {
         runner_poll();
         if (isatty(STDIN_FILENO) && isatty(STDOUT_FILENO)) {
@@ -133,6 +134,22 @@ int main(void) {
             if (!clear && history_add(command) != 0) last_status = 1;
             else last_status = history_command(&plan.stages[0]);
         } else {
+            /* Suggestions are advisory; the runner retains error handling and exit codes. */
+            for (size_t i=0;i<plan.count;i++) {
+                if (!plan.stages[i].argc) continue;
+                const char *name=plan.stages[i].argv[0];
+                if (!command_exists(name)) {
+                    char *suggestion=command_suggest(name);
+                    if (isatty(STDERR_FILENO))
+                        fprintf(stderr,"\033[31m명령어를 찾을 수 없습니다: %s\033[0m\n",name);
+                    if (suggestion) {
+                        if (isatty(STDERR_FILENO))
+                            fprintf(stderr,"\033[33m추천 명령어: %s\033[0m\n",suggestion);
+                        else fprintf(stderr,"추천 명령어: %s\n",suggestion);
+                    }
+                    free(suggestion);
+                }
+            }
             if (history_add(command) != 0) { last_status = 1; }
             else {
                 int exit_requested = 0;

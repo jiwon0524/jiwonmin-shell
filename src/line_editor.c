@@ -1,6 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "line_editor.h"
 #include "completion.h"
+#include "command_check.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,8 +21,18 @@ static int write_all(const char *s, size_t n) {
 static int redraw(const char *prompt, const char *s, size_t len, size_t pos) {
     char seq[64];
     if (write_all("\r\033[2K", 5) < 0 ||
-        write_all(prompt, strlen(prompt)) < 0 ||
-        write_all(s, len) < 0) return -1;
+        write_all(prompt, strlen(prompt)) < 0) return -1;
+    size_t begin=0,end=0;
+    if (command_word(s,&begin,&end)) {
+        char *word=strndup(s+begin,end-begin);
+        if (!word) return -1;
+        /* Only command word is colored. Arguments remain in terminal default color. */
+        const char *color=command_exists(word)?"\033[32m":"\033[31m";
+        free(word);
+        if (write_all(s,begin)<0 || write_all(color,strlen(color))<0 ||
+            write_all(s+begin,end-begin)<0 || write_all("\033[0m",4)<0 ||
+            write_all(s+end,len-end)<0) return -1;
+    } else if(write_all(s,len)<0) return -1;
     if (len > pos) {
         int n = snprintf(seq, sizeof(seq), "\033[%zuD", len-pos);
         if (n < 0 || (size_t)n >= sizeof(seq)) return -1;
