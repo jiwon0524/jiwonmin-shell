@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include "line_editor.h"
+#include "completion.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -57,7 +58,23 @@ char *line_editor_read(const char *prompt, const char *const *history, size_t co
         if (r<=0) { free(buf); buf=NULL; break; }
         if (c=='\r'||c=='\n') { write_all("\r\n",2); break; }
         if (c==4 && !len) { free(buf); buf=NULL; write_all("\r\n",2); break; }
-        if (c==127||c==8) {
+        if (c=='\t') {
+            size_t next_pos=pos, matches=0;
+            char *completed=completion_expand(buf,pos,&next_pos,&matches);
+            if (completed) {
+                size_t n=strlen(completed);
+                if (n+1>cap) {
+                    char *grown=realloc(buf,n+1);
+                    if (!grown) { free(completed); goto fail; }
+                    buf=grown; cap=n+1;
+                }
+                memcpy(buf,completed,n+1);
+                len=n; pos=next_pos;
+                free(completed);
+            } else if (matches>1) {
+                write_all("\a",1);
+            }
+        } else if (c==127||c==8) {
             if (pos) { memmove(buf+pos-1,buf+pos,len-pos+1); --pos; --len; }
         } else if (c==1) pos=0; /* Ctrl+A */
         else if (c==5) pos=len; /* Ctrl+E */
