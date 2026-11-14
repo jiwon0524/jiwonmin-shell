@@ -26,3 +26,6 @@ This is not a full replacement for GNU coreutils or POSIX shell utilities. In pa
 ## Team work
 
 Assign command groups and document *actual* implementation, review, and test contributions. Do not attribute generated code to a teammate who did not write or review it.
+
+## Stage 7 code organization
+The internal command dispatcher is in `src/commands.c`. File and directory operations are in `src/commands_fs.c`; text commands are in `src/commands_text.c`. Shared declarations are in `src/commands_internal.h`. These are organizational changes, not full GNU utility implementations.

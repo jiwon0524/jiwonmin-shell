@@ -157,12 +157,14 @@ static int builtin(const Stage *stage, int *exit_requested) {
 }
 static int wait_foreground(Job *job) {
     int status;
+    int wait_error = 0;
     for (;;) {
         if (all_done(job) || all_stopped(job)) break;
         pid_t pid = waitpid(-job->pgid, &status, WUNTRACED | WCONTINUED);
         if (pid < 0) {
             if (errno == EINTR) continue;
             if (errno != ECHILD) perror("waitpid");
+            wait_error = 1;
             break;
         }
         record_status(job, pid, status);
@@ -175,6 +177,7 @@ static int wait_foreground(Job *job) {
         printf("[%d] Stopped\n", job->id);
         return 128 + SIGTSTP;
     }
+    if (wait_error) return 1;
     int result = job->last_status;
     job->used = 0;
     return result;

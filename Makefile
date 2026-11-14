@@ -2,8 +2,8 @@ CC = cc
 CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -Werror -g -Iinclude
 all: jiwonmin-shell
 
-jiwonmin-shell: src/main.c src/plan.c src/runner.c src/commands.c include/commands.h include/plan.h include/runner.h
-	$(CC) $(CFLAGS) src/main.c src/plan.c src/runner.c src/commands.c -o $@
+jiwonmin-shell: src/main.c src/plan.c src/runner.c src/commands.c src/commands_fs.c src/commands_text.c src/commands_internal.h include/commands.h include/plan.h include/runner.h
+	$(CC) $(CFLAGS) src/main.c src/plan.c src/runner.c src/commands.c src/commands_fs.c src/commands_text.c -o $@
 
 test: jiwonmin-shell tests/test_plan.c src/plan.c include/plan.h
 	$(CC) $(CFLAGS) tests/test_plan.c src/plan.c -o test-plan

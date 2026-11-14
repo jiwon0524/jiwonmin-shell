@@ -24,3 +24,10 @@ Implemented the ten non-cd assignment commands in `src/commands.c`, using POSIX 
 - Add regression tests for multi-stage pipes, redirection failure recovery, and invalid `fg` identifiers.
 
 Limitations: interactive terminal signal handling still needs PTY-based tests; no claim of full POSIX job control compliance.
+
+## Stage 7 — command organization and regression coverage
+- Separate internal-command dispatch, file operations, and text operations.
+- Detect zero-progress writes in copy_stream rather than looping forever.
+- Preserve foreground job tracking if waitpid fails unexpectedly.
+- Add regressions for copying a file onto itself and cat continuing after a missing file.
+- Interactive terminal behavior should still be checked manually on Ubuntu.
