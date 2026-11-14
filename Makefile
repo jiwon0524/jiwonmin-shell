@@ -9,6 +9,7 @@ test: deu-shell tests/test_plan.c src/plan.c include/plan.h
 	$(CC) $(CFLAGS) tests/test_plan.c src/plan.c -o test-plan
 	./test-plan
 	sh tests/test_runner.sh
+	sh tests/test_pipeline.sh
 
 clean:
 	rm -f deu-shell test-plan

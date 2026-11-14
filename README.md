@@ -1,28 +1,19 @@
-# DEU Shell — stage 2
+# DEU Shell — Stage 3
 
-An educational C11 shell prototype. This is an intermediate implementation, not a complete shell.
+C11 educational shell. Supports single commands, `cd`, `exit`, input/output redirection (`<`, `>`, `>>`), and multi-stage pipelines (`|`). Background jobs (`&`) and interactive job control are not yet implemented. The assigned 11 commands currently run as external executables; they are **not** implemented internally.
 
-## Build and run
+## Build and test
 
 ```sh
-make
-make test
+make clean && make && make test
 ./deu-shell
 ```
 
-## Supported
+Run commands inside the shell **without** typing the `deu-shell>` prompt.
 
-- Tokenization and parsing (from stage 1)
-- One foreground external command with arguments via `fork`, `execvp`, and `waitpid`
-- Built-in `cd` (current process) and `exit`
-- Errors for unknown commands and unsupported stage-2 execution modes
+## Limitations
 
-## Not yet supported
-
-- Executing pipelines, redirects, or background jobs (parsed, but execution explicitly rejected)
-- Signal/job control
-- Direct implementations of the assignment's eleven required commands (currently other commands run via the OS)
-
-## Development provenance
-
-Stage 2 is AI-assisted scaffolding. Review and adapt the code yourself and follow your course's AI-use rules before submission. No third-party shell source code was copied into this stage.
+- Builtin `cd` and `exit` with redirection are rejected in stage 3.
+- `cd` inside a pipeline changes only the child process's directory.
+- The parser is an educational subset of POSIX shell grammar.
+- Signal/job control and command-specific builtins are future stages.

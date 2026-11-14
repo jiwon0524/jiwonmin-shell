@@ -9,7 +9,7 @@ int main(void) {
     char *line = NULL;
     size_t cap = 0;
     int last_status = 0;
-    puts("DEU Shell / stage 2: single-command execution (no pipes/redirection/background yet)");
+    puts("DEU Shell / stage 3: pipelines and redirection (no background yet)");
     for (;;) {
         if (isatty(fileno(stdin))) { fputs("deu-shell> ", stdout); fflush(stdout); }
         if (getline(&line, &cap, stdin) < 0) break;
