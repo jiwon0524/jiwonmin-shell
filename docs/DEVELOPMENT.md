@@ -31,3 +31,6 @@ Limitations: interactive terminal signal handling still needs PTY-based tests; n
 - Preserve foreground job tracking if waitpid fails unexpectedly.
 - Add regressions for copying a file onto itself and cat continuing after a missing file.
 - Interactive terminal behavior should still be checked manually on Ubuntu.
+
+## Stage 8 — screenshot instead of crab
+User-selected X11 desktop capture command `jiwonmin` implemented in src/screenshot.c. Existing Stage 7 commands retained. Requires scrot or gnome-screenshot.

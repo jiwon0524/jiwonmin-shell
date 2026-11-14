@@ -2,8 +2,8 @@ CC = cc
 CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -Werror -g -Iinclude
 all: jiwonmin-shell
 
-jiwonmin-shell: src/main.c src/plan.c src/runner.c src/commands.c src/commands_fs.c src/commands_text.c src/commands_internal.h include/commands.h include/plan.h include/runner.h
-	$(CC) $(CFLAGS) src/main.c src/plan.c src/runner.c src/commands.c src/commands_fs.c src/commands_text.c -o $@
+jiwonmin-shell: src/main.c src/plan.c src/runner.c src/commands.c src/commands_fs.c src/commands_text.c src/screenshot.c src/commands_internal.h src/screenshot.h include/commands.h include/plan.h include/runner.h
+	$(CC) $(CFLAGS) src/main.c src/plan.c src/runner.c src/commands.c src/commands_fs.c src/commands_text.c src/screenshot.c -o $@
 
 test: jiwonmin-shell tests/test_plan.c src/plan.c include/plan.h
 	$(CC) $(CFLAGS) tests/test_plan.c src/plan.c -o test-plan
@@ -13,6 +13,7 @@ test: jiwonmin-shell tests/test_plan.c src/plan.c include/plan.h
 	sh tests/test_jobs.sh
 	sh tests/test_commands.sh
 	sh tests/test_regression.sh
+	sh tests/test_screenshot.sh
 
 clean:
 	rm -f jiwonmin-shell test-plan

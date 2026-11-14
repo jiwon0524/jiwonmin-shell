@@ -1,10 +1,12 @@
 #include "commands.h"
 #include "commands_internal.h"
 #include <string.h>
+#include "screenshot.h"
 
 int commands_execute(int argc, char *const *argv) {
     if (!argc) return -1;
     const char *cmd = argv[0];
+    if (!strcmp(cmd, "jiwonmin")) return screenshot_execute(argc, argv);
     if (!strcmp(cmd, "pwd")) return command_pwd(argc, argv);
     if (!strcmp(cmd, "ls")) return command_ls(argc, argv);
     if (!strcmp(cmd, "mkdir")) return command_mkdir(argc, argv);
