@@ -1,31 +1,28 @@
-# DEU Shell — Stage 4
+# DEU Shell — Stage 5
 
-Educational C11 shell. Supports external foreground commands, `cd`, `exit`, `<`, `>`, `>>`, multi-stage pipelines, background jobs (`&`), and basic `jobs` / `fg` job control. In an interactive terminal, foreground process groups receive Ctrl+C (SIGINT), Ctrl+Z (SIGTSTP), and Ctrl+\ (SIGQUIT). The shell itself ignores those signals.
+Educational C11 shell implementing eleven assignment commands: `ls`, `pwd`, `cd`, `mkdir`, `rmdir`, `ln`, `cp`, `rm`, `mv`, `cat`, and `grep`.
 
-## Build
+Ten commands are implemented in `src/commands.c`; `cd` is implemented in `src/runner.c` because it must change the shell process's working directory. Internal commands can participate in pipelines and redirection. Unknown commands fall back to `execvp()`.
+
+## Build and test
 
 ```sh
 make clean && make && make test
 ./deu-shell
 ```
 
-## Manual interactive checks
+## Supported command subset
 
-Run one line at a time *inside* the shell:
+- `ls [directory]`: lists visible names, one per line; no flags.
+- `pwd`, `cd [directory]`, `mkdir directory`, `rmdir empty-directory`.
+- `ln source link-name`, `ln -s source link-name`.
+- `cp source destination`: regular files only, no directory copies.
+- `rm file`, `mv source destination`: simple file operations, no options.
+- `cat [file ...]` and `grep pattern [file ...]`: basic text operations; `grep` matches literal substrings, not regular expressions.
+- `jobs`, `fg`, `exit`, background `&`, redirections `<`, `>`, `>>`, and pipelines `|` remain available.
 
-```text
-sleep 10 &
-jobs
-fg
-```
+This is not a full replacement for GNU coreutils or POSIX shell utilities. In particular, command flags and recursive operations are not implemented. Job control is basic and needs interactive terminal regression testing.
 
-While `fg` is waiting, press Ctrl+C or Ctrl+Z. After Ctrl+Z, run `jobs` and `fg` to resume. `Ctrl+Z` is SIGTSTP, **not** SIGQUIT.
+## Team work
 
-## Current limitations
-
-- Parent builtins do not support redirection; `jobs` and `fg` are unavailable in pipelines.
-- Background status is reaped when the shell next processes input, rather than asynchronously notifying while waiting at the prompt.
-- Job IDs can be reused only via new allocations, not by a persistent jobspec grammar; `fg [numeric-id]` is supported.
-- No terminal mode preservation per stopped job; interactive full-screen programs may require additional work.
-- `exit` does not terminate outstanding background jobs.
-- The assignment's 11 commands still run via `execvp` and have **not** been independently implemented.
+Assign command groups and document *actual* implementation, review, and test contributions. Do not attribute generated code to a teammate who did not write or review it.

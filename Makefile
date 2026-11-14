@@ -2,8 +2,8 @@ CC = cc
 CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -Werror -g -Iinclude
 all: deu-shell
 
-deu-shell: src/main.c src/plan.c src/runner.c include/plan.h include/runner.h
-	$(CC) $(CFLAGS) src/main.c src/plan.c src/runner.c -o $@
+deu-shell: src/main.c src/plan.c src/runner.c src/commands.c include/commands.h include/plan.h include/runner.h
+	$(CC) $(CFLAGS) src/main.c src/plan.c src/runner.c src/commands.c -o $@
 
 test: deu-shell tests/test_plan.c src/plan.c include/plan.h
 	$(CC) $(CFLAGS) tests/test_plan.c src/plan.c -o test-plan
@@ -11,6 +11,7 @@ test: deu-shell tests/test_plan.c src/plan.c include/plan.h
 	sh tests/test_runner.sh
 	sh tests/test_pipeline.sh
 	sh tests/test_jobs.sh
+	sh tests/test_commands.sh
 
 clean:
 	rm -f deu-shell test-plan

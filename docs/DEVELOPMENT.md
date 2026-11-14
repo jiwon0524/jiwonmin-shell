@@ -11,3 +11,6 @@ Added pipe-connected child processes and per-stage input/output redirection; tes
 
 ## Stage 4
 Added process groups, terminal foreground handoff, stopped/running/finished job tracking, background execution, jobs/fg, and signal defaults for child processes. Tested in noninteractive automation; Ctrl+C/Ctrl+Z must be checked manually in an interactive terminal.
+
+## Stage 5
+Implemented the ten non-cd assignment commands in `src/commands.c`, using POSIX file/directory operations; retained parent-process `cd` in runner. Added end-to-end tests for file manipulation, piping, grep, and self-copy protection. Supported syntax is deliberately narrower than GNU utilities.

@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include "runner.h"
+#include "commands.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -217,6 +218,8 @@ int runner_execute(const Plan *plan, int *exit_requested) {
     for (size_t i = 0; i < plan->count; ++i) {
         int link[2] = {-1, -1};
         if (i + 1 < plan->count && pipe(link) < 0) { perror("pipe"); goto launch_error; }
+        /* Avoid replaying buffered parent output in a child using stdio. */
+        fflush(NULL);
         pid_t pid = fork();
         if (pid < 0) {
             perror("fork");
@@ -239,6 +242,8 @@ int runner_execute(const Plan *plan, int *exit_requested) {
             int ignored_exit = 0;
             int code = builtin(stage, &ignored_exit);
             if (code >= 0) _exit(code);
+            code = commands_execute((int)stage->argc, stage->argv);
+            if (code >= 0) { fflush(stdout); fflush(stderr); _exit(code); }
             execvp(stage->argv[0], stage->argv);
             fprintf(stderr, "deu-shell: %s: %s\n", stage->argv[0], strerror(errno));
             _exit(errno == ENOENT ? 127 : 126);
