@@ -1,3 +1,8 @@
 deu-shell
 test-plan
 *.o
+
+# Build outputs
+/jiwonmin-shell
+/deu-shell
+/test-plan
