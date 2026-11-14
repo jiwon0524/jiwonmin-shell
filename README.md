@@ -1,6 +1,8 @@
-# DEU Shell — Stage 1
+# DEU Shell — stage 2
 
-This milestone is **a parser demonstration, not a working shell**. It does not execute commands, spawn processes, change directories, or implement job control.
+An educational C11 shell prototype. This is an intermediate implementation, not a complete shell.
+
+## Build and run
 
 ```sh
 make
@@ -8,10 +10,19 @@ make test
 ./deu-shell
 ```
 
-Try `cat input.txt | grep "error code" > result.txt &` to inspect the plan. Type `exit` to quit.
+## Supported
 
-Tokenizer supports whitespace, single/double quotes, backslash escapes, `|`, `<`, `>`, `>>`, `&`. It does not support shell expansions, `&&`, `||`, `;`, heredocs, or full POSIX shell grammar.
+- Tokenization and parsing (from stage 1)
+- One foreground external command with arguments via `fork`, `execvp`, and `waitpid`
+- Built-in `cd` (current process) and `exit`
+- Errors for unknown commands and unsupported stage-2 execution modes
 
-Next milestone: command dispatch and execution, with regression tests.
+## Not yet supported
 
-**Academic integrity:** This is an AI-assisted reference implementation. Check the course AI policy before submitting, understand and modify it substantively, and accurately record contributions. It is not guaranteed to be dissimilar to other projects.
+- Executing pipelines, redirects, or background jobs (parsed, but execution explicitly rejected)
+- Signal/job control
+- Direct implementations of the assignment's eleven required commands (currently other commands run via the OS)
+
+## Development provenance
+
+Stage 2 is AI-assisted scaffolding. Review and adapt the code yourself and follow your course's AI-use rules before submission. No third-party shell source code was copied into this stage.
