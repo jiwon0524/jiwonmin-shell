@@ -1,6 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "plan.h"
 #include "runner.h"
+#include "line_editor.h"
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
@@ -93,11 +94,16 @@ int main(void) {
     size_t cap = 0;
     int last_status = 0;
     if (runner_init() != 0) return 1;
-    puts("Jiwonmin Shell 9단계 | 도움말: help | 명령어 기록: history");
+    puts("Jiwonmin Shell 10단계 | help / history | 방향키로 기록 탐색");
     for (;;) {
         runner_poll();
-        if (isatty(STDIN_FILENO)) { fputs("jiwonmin-shell> ", stdout); fflush(stdout); }
-        if (getline(&line, &cap, stdin) < 0) break;
+        if (isatty(STDIN_FILENO) && isatty(STDOUT_FILENO)) {
+            free(line);
+            line = line_editor_read("jiwonmin-shell> ",
+                                    (const char *const *)history, history_count);
+            cap = line ? strlen(line) + 1 : 0;
+            if (!line) break;
+        } else if (getline(&line, &cap, stdin) < 0) break;
         size_t len = strlen(line);
         while (len && (line[len - 1] == '\n' || line[len - 1] == '\r')) line[--len] = '\0';
         char *start = line;
