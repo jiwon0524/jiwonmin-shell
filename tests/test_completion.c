@@ -23,11 +23,19 @@ int main(void) {
     assert(s && !strcmp(s,"cat report.txt") && matches==1);free(s);
     s=completion_expand("cat missing",11,&pos,&matches);
     assert(!s && matches==0);
+    s=completion_expand("mkd",3,&pos,&matches);
+    assert(s && !strcmp(s,"mkdir") && matches==1);free(s);
+    size_t n=0;
+    char **names=completion_candidates("cd Do",5,&n);
+    assert(names && n==2 && !strcmp(names[0],"Documents/") && !strcmp(names[1],"Downloads/"));
+    completion_free_candidates(names,n);
+    s=completion_expand("cat rep",7,&pos,&matches);
+    assert(s && !strcmp(s,"cat report.txt"));free(s);
     assert(unlink("report.txt")==0);
     assert(rmdir("Documents")==0);
     assert(rmdir("Downloads")==0);
     assert(chdir("/")==0);
     assert(rmdir(tmp)==0);
-    puts("4 tab completion checks passed");
+    puts("7 tab completion checks passed");
     return 0;
 }

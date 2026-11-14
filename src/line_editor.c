@@ -47,6 +47,7 @@ char *line_editor_read(const char *prompt, const char *const *history, size_t co
     raw.c_cc[VMIN]=1; raw.c_cc[VTIME]=0;
     if (tcsetattr(STDIN_FILENO,TCSAFLUSH,&raw)<0) return NULL;
     size_t cap=128,len=0,pos=0,nav=count;
+    int tab_pending=0;
     char *buf=malloc(cap), *draft=NULL;
     if (!buf) goto fail;
     buf[0]='\0';
@@ -59,6 +60,8 @@ char *line_editor_read(const char *prompt, const char *const *history, size_t co
         if (c=='\r'||c=='\n') { write_all("\r\n",2); break; }
         if (c==4 && !len) { free(buf); buf=NULL; write_all("\r\n",2); break; }
         if (c=='\t') {
+            int was_pending=tab_pending;
+            tab_pending=1;
             size_t next_pos=pos, matches=0;
             char *completed=completion_expand(buf,pos,&next_pos,&matches);
             if (completed) {
@@ -71,14 +74,26 @@ char *line_editor_read(const char *prompt, const char *const *history, size_t co
                 memcpy(buf,completed,n+1);
                 len=n; pos=next_pos;
                 free(completed);
-            } else if (matches>1) {
-                write_all("\a",1);
-            }
+            } else if (matches>1 && was_pending) {
+                size_t n=0;
+                char **names=completion_candidates(buf,pos,&n);
+                if (names && n) {
+                    write_all("\r\n",2);
+                    for (size_t i=0;i<n;i++) {
+                        write_all(names[i],strlen(names[i]));
+                        write_all((i+1)%4==0?"\r\n":"  ",(i+1)%4==0?2:2);
+                    }
+                    if (n%4) write_all("\r\n",2);
+                    completion_free_candidates(names,n);
+                }
+            } else if (matches>1) write_all("\a",1);
         } else if (c==127||c==8) {
+            tab_pending=0;
             if (pos) { memmove(buf+pos-1,buf+pos,len-pos+1); --pos; --len; }
-        } else if (c==1) pos=0; /* Ctrl+A */
-        else if (c==5) pos=len; /* Ctrl+E */
+        } else if (c==1) {tab_pending=0;pos=0;} /* Ctrl+A */
+        else if (c==5) {tab_pending=0;pos=len;} /* Ctrl+E */
         else if (c==27) {
+            tab_pending=0;
             unsigned char a,b;
             if (read(STDIN_FILENO,&a,1)!=1 || a!='[') continue;
             if (read(STDIN_FILENO,&b,1)!=1) continue;
@@ -100,6 +115,7 @@ char *line_editor_read(const char *prompt, const char *const *history, size_t co
                 }
             }
         } else if (c>=32) {
+            tab_pending=0;
             if (len+2>cap) {
                 size_t next=cap*2;
                 char *p=realloc(buf,next);
