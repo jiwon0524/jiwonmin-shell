@@ -2,8 +2,8 @@ CC = cc
 CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -Werror -g -Iinclude
 all: jiwonmin-shell
 
-jiwonmin-shell: src/main.c src/plan.c src/runner.c src/commands.c src/commands_fs.c src/commands_text.c src/screenshot.c src/line_editor.c src/line_editor.h src/completion.c src/completion.h src/command_check.c src/command_check.h src/commands_internal.h src/screenshot.h include/commands.h include/plan.h include/runner.h
-	$(CC) $(CFLAGS) src/main.c src/plan.c src/runner.c src/commands.c src/commands_fs.c src/commands_text.c src/screenshot.c src/line_editor.c src/completion.c src/command_check.c -o $@
+jiwonmin-shell: src/main.c src/plan.c src/runner.c src/commands.c src/commands_fs.c src/commands_text.c src/screenshot.c src/line_editor.c src/line_editor.h src/completion.c src/completion.h src/command_check.c src/command_check.h src/chain.c src/chain.h src/commands_internal.h src/screenshot.h include/commands.h include/plan.h include/runner.h
+	$(CC) $(CFLAGS) src/main.c src/plan.c src/runner.c src/commands.c src/commands_fs.c src/commands_text.c src/screenshot.c src/line_editor.c src/completion.c src/command_check.c src/chain.c -o $@
 
 test: jiwonmin-shell tests/test_plan.c src/plan.c include/plan.h
 	$(CC) $(CFLAGS) tests/test_plan.c src/plan.c -o test-plan
@@ -20,7 +20,10 @@ test: jiwonmin-shell tests/test_plan.c src/plan.c include/plan.h
 	./test-completion
 	$(CC) $(CFLAGS) tests/test_command_check.c src/command_check.c -o test-command-check
 	./test-command-check
+	$(CC) $(CFLAGS) tests/test_chain.c src/chain.c -o test-chain
+	./test-chain
+	sh tests/test_chain_integration.sh
 
 clean:
-	rm -f jiwonmin-shell test-plan test-completion test-command-check
+	rm -f jiwonmin-shell test-plan test-completion test-command-check test-chain
 .PHONY: all test clean
