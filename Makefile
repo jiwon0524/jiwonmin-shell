@@ -14,6 +14,8 @@ test: jiwonmin-shell tests/test_plan.c src/plan.c include/plan.h
 	sh tests/test_commands.sh
 	sh tests/test_regression.sh
 	sh tests/test_screenshot.sh
+	sh tests/test_help.sh
+	sh tests/test_history.sh
 
 clean:
 	rm -f jiwonmin-shell test-plan

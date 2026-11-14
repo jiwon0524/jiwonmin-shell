@@ -1,44 +1,60 @@
-# Jiwonmin Shell — Stage 8 (X11 Screenshot)
+# Jiwonmin Shell — 8단계 (화면 캡처 및 한글 도움말)
 
-Educational C11 shell implementing eleven assignment commands: `ls`, `pwd`, `cd`, `mkdir`, `rmdir`, `ln`, `cp`, `rm`, `mv`, `cat`, and `grep`.
+C11로 작성한 교육용 리눅스 쉘 프로젝트입니다. 과제의 기본 명령어 11개(`ls`, `pwd`, `cd`, `mkdir`, `rmdir`, `ln`, `cp`, `rm`, `mv`, `cat`, `grep`)와 프로세스 실행, 파이프, 재지향, 기본 작업 제어를 지원합니다. 명령어 이름은 영어로 유지하고 사용 안내는 한글로 제공합니다.
 
-Ten commands are implemented in `src/commands.c`; `cd` is implemented in `src/runner.c` because it must change the shell process's working directory. Internal commands can participate in pipelines and redirection. Unknown commands fall back to `execvp()`.
-
-## Build and test
+## 빌드 및 실행
 
 ```sh
 make clean && make && make test
 ./jiwonmin-shell
 ```
 
-## Supported command subset
+쉘 안에서 `help`를 입력하면 한글 명령어 설명을 확인할 수 있습니다.
 
-- `ls [directory]`: lists visible names, one per line; no flags.
-- `pwd`, `cd [directory]`, `mkdir directory`, `rmdir empty-directory`.
-- `ln source link-name`, `ln -s source link-name`.
-- `cp source destination`: regular files only, no directory copies.
-- `rm file`, `mv source destination`: simple file operations, no options.
-- `cat [file ...]` and `grep pattern [file ...]`: basic text operations; `grep` matches literal substrings, not regular expressions.
-- `jobs`, `fg`, `exit`, background `&`, redirections `<`, `>`, `>>`, and pipelines `|` remain available.
+## 명령어
 
-This is not a full replacement for GNU coreutils or POSIX shell utilities. In particular, command flags and recursive operations are not implemented. Job control is basic. Manual interactive-terminal regression tests for Ctrl+C, Ctrl+Z, Ctrl+\\, jobs and fg are still required. Shell exit sends SIGHUP to tracked jobs and SIGCONT to stopped jobs.
+| 명령어 | 기능 및 제한 |
+| --- | --- |
+| `ls [경로]` | 숨김 파일을 제외한 이름 출력, 옵션 미지원 |
+| `pwd` | 현재 경로 출력 |
+| `cd [경로]` | 현재 쉘의 작업 디렉터리 변경 |
+| `mkdir 경로`, `rmdir 경로` | 디렉터리 생성 / 빈 디렉터리 삭제 |
+| `ln 원본 링크`, `ln -s 원본 링크` | 하드 링크 / 심볼릭 링크 생성 |
+| `cp 원본 대상` | 일반 파일 복사, 디렉터리 복사 미지원 |
+| `rm 파일`, `mv 원본 대상` | 기본 파일 삭제 / 이동 |
+| `cat [파일 ...]` | 파일 내용 출력 |
+| `grep 문자열 [파일 ...]` | 단순 부분 문자열 검색, 정규표현식 미지원 |
+| `jobs`, `fg`, `exit` | 작업 조회, 전경 작업 전환, 쉘 종료 |
+| `help` | 한글 명령어 도움말 |
+| `jiwonmin` | X11 전체 화면 PNG 캡처 |
 
-## Team work
+`<`, `>`, `>>` 재지향, `|` 파이프, `&` 백그라운드 실행을 지원합니다. 알 수 없는 명령어는 `execvp()`로 외부 프로그램 실행을 시도합니다.
 
-Assign command groups and document *actual* implementation, review, and test contributions. Do not attribute generated code to a teammate who did not write or review it.
+## 화면 캡처
 
-## Stage 7 code organization
-The internal command dispatcher is in `src/commands.c`. File and directory operations are in `src/commands_fs.c`; text commands are in `src/commands_text.c`. Shared declarations are in `src/commands_internal.h`. These are organizational changes, not full GNU utility implementations.
+- `jiwonmin`: `~/Pictures/Jiwonmin/screenshot_YYYYMMDD_HHMMSS_NNN.png`에 전체 화면 저장
+- `jiwonmin -d 3`: 3초 후 캡처
+- `jiwonmin -o /tmp/capture.png`: 지정 경로에 저장 (기존 파일 덮어쓰기 방지)
+- Ubuntu X11 환경에서 `scrot` 또는 `gnome-screenshot`이 필요합니다. 필요 시 `sudo apt install scrot` 실행
+- 현재는 영역/창 선택 캡처를 지원하지 않으며 사용자가 명령어를 실행했을 때만 캡처합니다.
 
-## Jiwonmin Screenshot (X11 / GNOME)
+## 프로젝트 구성
 
-`jiwonmin` captures the full desktop into `~/Pictures/Jiwonmin/screenshot_YYYYMMDD_HHMMSS_NNN.png`.
+- `src/main.c`: 쉘 입력 반복
+- `src/plan.c`: 명령어 구문 분석
+- `src/runner.c`: 실행, 파이프, 재지향, 작업 제어, `cd`
+- `src/commands.c`: 내부 명령어 분기 및 `help`
+- `src/commands_fs.c`: 파일·디렉터리 명령어
+- `src/commands_text.c`: 텍스트 명령어
+- `src/screenshot.c`: 화면 캡처
+- `tests/`: 자동 테스트
 
-- `jiwonmin -d 3`: capture after a 3-second delay.
-- `jiwonmin -o /tmp/capture.png`: save to a chosen path (will not overwrite existing files).
-- Requires an X11 graphical session and either `scrot` or `gnome-screenshot` installed. Install via `sudo apt install scrot` if necessary.
-- Captures the **entire desktop**, including the shell window. To hide the shell before capture, use `-d 3` and minimize it during the countdown.
-- This is a full-screen capture feature, not yet region/window selection.
-- Screen capture is user-triggered; no background surveillance or automatic uploads.
+## 구현 범위 및 주의사항
 
-The crab file hunter was not included in this release; this release is based on the tested Stage 7 source.
+GNU coreutils나 완전한 POSIX 쉘과 동일하지 않습니다. 명령어 옵션, 재귀 작업, 작업 제어 기능은 일부만 구현했습니다. Ctrl+C, Ctrl+Z, Ctrl+\, `jobs`, `fg` 등은 실제 대화형 터미널에서 별도로 점검해야 합니다. 쉘 종료 시 추적 중인 작업에 SIGHUP을 보내고 정지 작업에는 SIGCONT도 보냅니다.
+
+팀별 구현·검토·테스트 기여도는 실제 수행한 내용을 기준으로 기록하세요.
+
+## 9단계 — 명령어 기록
+
+`history`로 현재 쉘 세션의 명령어 기록을 확인합니다. `history 10`은 최근 10개, `!!`는 직전 명령어, `!5`는 기록 번호 5의 명령어를 다시 실행합니다. `history -c`로 기록을 지울 수 있습니다. 최근 100개만 메모리에 보관하며 쉘 종료 시 사라집니다. `history` 명령어 자체도 기록에 포함되지만 `history -c`는 기록을 지운 뒤 다시 추가하지 않습니다. `history`의 파이프·리다이렉션·백그라운드 조합은 지원하지 않습니다.

@@ -1,36 +1,31 @@
-# Development notes
+# Jiwonmin Shell 개발 기록
 
-- Stage 1: tokenization and execution plan parsing.
-- Stage 2: add a single-command runner with `fork` / `execvp` / `waitpid` and parent-process `cd` / `exit`.
-- Unsupported execution modes explicitly fail rather than silently ignoring operators.
-- Next: implement redirection and pipelines, then job control and the required built-in commands.
-- Tests: `make test` includes parser and runner checks.
+## 1단계 — 구문 분석
+입력 문자열을 토큰으로 나누고 실행 계획을 구성했습니다. 미지원 실행 방식은 조용히 무시하지 않고 오류 처리하도록 설계했습니다.
 
-## Stage 3
-Added pipe-connected child processes and per-stage input/output redirection; tested with shell integration tests. Background and signal/job control remain unimplemented.
+## 2단계 — 단일 명령 실행
+`fork`, `execvp`, `waitpid`를 이용해 명령을 실행하고, 현재 쉘의 디렉터리를 변경해야 하는 `cd`와 `exit`를 처리했습니다.
 
-## Stage 4
-Added process groups, terminal foreground handoff, stopped/running/finished job tracking, background execution, jobs/fg, and signal defaults for child processes. Tested in noninteractive automation; Ctrl+C/Ctrl+Z must be checked manually in an interactive terminal.
+## 3단계 — 파이프와 재지향
+파이프에 연결된 여러 프로세스와 각 단계의 입출력 재지향을 구현하고 통합 테스트를 추가했습니다.
 
-## Stage 5
-Implemented the ten non-cd assignment commands in `src/commands.c`, using POSIX file/directory operations; retained parent-process `cd` in runner. Added end-to-end tests for file manipulation, piping, grep, and self-copy protection. Supported syntax is deliberately narrower than GNU utilities.
+## 4단계 — 기본 작업 제어
+프로세스 그룹, 터미널 전경 제어, 실행·정지·종료 작업 추적, 백그라운드 실행, `jobs`, `fg`, 자식 프로세스 신호 처리를 구현했습니다. Ctrl+C와 Ctrl+Z는 실제 터미널에서 추가 확인이 필요합니다.
 
+## 5단계 — 과제 명령어 구현
+`cd`를 제외한 10개 내부 명령어를 구현했습니다. 파일 처리, 파이프 연결, 문자열 검색, 자기 자신에게 복사 방지 등의 테스트를 추가했습니다. GNU 명령어의 모든 옵션을 지원하지는 않습니다.
 
-## Stage 6 — job-control hardening
-- Check process-group assignment failures in both parent and child.
-- Restore terminal ownership when foreground handoff fails.
-- Handle `fg` resume errors instead of silently continuing.
-- On shell exit, notify tracked background/stopped jobs with SIGHUP (and SIGCONT for stopped jobs).
-- Add regression tests for multi-stage pipes, redirection failure recovery, and invalid `fg` identifiers.
+## 6단계 — 작업 제어 안정성 개선
+부모·자식의 프로세스 그룹 설정 오류를 확인하고, 전경 전환 실패 시 터미널 소유권 복구를 처리했습니다. `fg` 재개 실패와 쉘 종료 시 작업 정리도 보완했습니다. 다단계 파이프, 재지향 실패 복구, 잘못된 `fg` 번호에 대한 회귀 테스트를 추가했습니다.
 
-Limitations: interactive terminal signal handling still needs PTY-based tests; no claim of full POSIX job control compliance.
+## 7단계 — 명령어 코드 분리
+명령어 분기, 파일·디렉터리 작업, 텍스트 작업을 별도 소스 파일로 분리했습니다. 파일 복사 시 쓰기 진행이 없는 상황을 오류로 처리하고, `waitpid` 오류 시 작업 추적 정보를 보존하도록 수정했습니다. 자기 자신으로의 복사와 없는 파일에 대한 `cat` 처리도 점검했습니다.
 
-## Stage 7 — command organization and regression coverage
-- Separate internal-command dispatch, file operations, and text operations.
-- Detect zero-progress writes in copy_stream rather than looping forever.
-- Preserve foreground job tracking if waitpid fails unexpectedly.
-- Add regressions for copying a file onto itself and cat continuing after a missing file.
-- Interactive terminal behavior should still be checked manually on Ubuntu.
+## 8단계 — X11 화면 캡처 및 한글 도움말
+`jiwonmin` 명령어로 전체 화면을 PNG 파일로 저장하도록 구현했습니다. `-d` 지연 캡처와 `-o` 저장 경로 지정 기능을 제공합니다. Ubuntu X11 환경에서 `scrot` 또는 `gnome-screenshot`을 사용합니다. 기존 7단계 기능은 유지하며, `help` 명령어에 한글 사용법을 추가하고 README와 개발 기록을 한글로 정리했습니다.
 
-## Stage 8 — screenshot instead of crab
-User-selected X11 desktop capture command `jiwonmin` implemented in src/screenshot.c. Existing Stage 7 commands retained. Requires scrot or gnome-screenshot.
+## 남은 제한 및 확인 사항
+실제 대화형 터미널의 Ctrl+C, Ctrl+Z, Ctrl+\, `jobs`, `fg` 동작은 수동 점검이 필요합니다. 기본 작업 제어는 완전한 POSIX 호환을 보장하지 않습니다. 화면 캡처는 X11 전체 화면만 지원합니다.
+
+## 9단계 — history
+현재 세션 내 최대 100개 명령어 기록, `history [개수]`, `history -c`, `!!`, `!번호`를 추가했습니다. 기존 쉘 기능은 유지합니다.
